@@ -1,0 +1,31 @@
+# Environment variables
+.env
+
+# Python byte-code / cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Application Logs & Output
+logs/*.log
+output/*
+data/*.db
+!data/.gitkeep
+!logs/.gitkeep
+!output/.gitkeep
+!screenshots/.gitkeep
+
+# IDE / OS junk
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

@@ -117,6 +117,19 @@ class DatabaseManager:
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
 
+    def get_record_by_email_id(self, email_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieves an existing valid classification record by email_id if it exists in SQLite."""
+        if not email_id or email_id.startswith("ROW-"):
+            return None
+        query = "SELECT * FROM processed_emails WHERE email_id = ? AND category != 'Error' ORDER BY id DESC LIMIT 1"
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(query, (email_id,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
+
+
     def get_analytics_summary(self) -> Dict[str, Any]:
         """Returns aggregation statistics for dashboard visualization."""
         with self.get_connection() as conn:

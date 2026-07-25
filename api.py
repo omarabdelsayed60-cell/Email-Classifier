@@ -1,8 +1,10 @@
 import json
+import time
 from typing import Optional, Tuple
 from google import genai
 from google.genai import types
 from google.genai.errors import APIError
+
 
 from config import Config
 from logger import logger
@@ -28,9 +30,7 @@ class GeminiClassifier:
 
     def is_key_configured(self) -> bool:
         """Returns True if a valid API key is present in .env."""
-        current_key = self.api_key or Config.get_gemini_api_key() or ""
-        clean = current_key.strip().strip('"').strip("'")
-        return bool(clean and clean != "your_gemini_api_key_here")
+        return bool(self.api_key and self.api_key != "your_gemini_api_key_here")
 
     def _init_client(self) -> None:
         """Initializes the official Google GenAI Client SDK."""
@@ -50,19 +50,24 @@ class GeminiClassifier:
         self, subject: str, body: str, model_name: str = "gemini-flash-latest"
     ) -> EmailClassification:
         """Classifies email subject & body into structured Pydantic schema using Gemini API."""
-        # 1. Refresh key dynamically from .env if needed
-        self.api_key = self.api_key or Config.get_gemini_api_key()
         if not self.is_key_configured():
             raise ValueError(
                 "Gemini API Key is missing! Please paste your key into the .env file."
             )
 
+
         if not self.client:
             self.client = genai.Client(api_key=self.api_key)
 
-        # 2. Format user prompt and model name
+        # 2. Format user prompt and resolve model mapping
         user_prompt = build_user_prompt(subject=subject, body=body)
-        target_model = model_name.strip().replace("models/", "")
+        raw_model = model_name.strip().replace("models/", "")
+        model_map = {
+            "gemini-2.5-flash": "gemini-1.5-flash",
+            "gemini-pro-latest": "gemini-1.5-pro",
+        }
+        target_model = model_map.get(raw_model, raw_model)
+
 
         # 3. Call Google Gemini API with structured JSON output config
         try:
@@ -92,12 +97,42 @@ class GeminiClassifier:
 
             if "400" in err_str or "API_KEY_INVALID" in err_str:
                 raise ValueError("Invalid Gemini API Key! Please verify your key in the .env file.")
-            elif "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
-                raise ValueError("Quota Rate Limit Exceeded (429)! Please wait a moment before running again.")
-            elif "404" in err_str:
-                raise ValueError(f"Model '{target_model}' is not supported on your project. Use 'gemini-flash-latest'.")
+            elif "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+                # Automatic rate limit handling: wait 6 seconds and retry up to 3 times
+                for retry_attempt in range(1, 4):
+                    logger.warning(f"Rate limit hit (429). Pausing 6s before retry {retry_attempt}/3...")
+                    time.sleep(6)
+                    try:
+                        resp = self.client.models.generate_content(
+                            model=target_model,
+                            contents=user_prompt,
+                            config=types.GenerateContentConfig(
+                                system_instruction=SYSTEM_PROMPT,
+                                response_mime_type="application/json",
+                                response_schema=EmailClassification,
+                                temperature=0.2,
+                            ),
+                        )
+                        if resp.text:
+                            return EmailClassification.model_validate_json(resp.text)
+                    except Exception as retry_err:
+                        logger.warning(f"Retry attempt {retry_attempt} failed: {retry_err}")
+                        continue
+                raise ValueError("Quota Rate Limit Exceeded (429)! Google's free tier rate limit was reached. Please wait 15–30 seconds before running again.")
+            elif "404" in err_str or "not supported" in err_str.lower():
+                logger.info(f"Model '{target_model}' not supported. Falling back to 'gemini-flash-latest'...")
+                try:
+                    resp_fb = self.client.models.generate_content(
+                        model="gemini-flash-latest", contents=user_prompt, config=config
+                    )
+                    if resp_fb.text:
+                        return EmailClassification.model_validate_json(resp_fb.text)
+                except Exception as fb_err:
+                    raise ValueError(f"Model '{target_model}' is not supported on your project. Use 'gemini-flash-latest'.")
             else:
                 raise ValueError(f"Google API Error: {err_str}")
+
+
 
         except Exception as err:
             logger.error(f"Error classifying email on model '{target_model}': {err}")

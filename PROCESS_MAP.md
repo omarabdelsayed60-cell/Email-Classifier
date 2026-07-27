@@ -1,6 +1,6 @@
 # 🗺️ AI Customer Email Classifier — Business Process Map Chart
 
-![Process Map Flowchart Chart](file:///C:/Users/LOQ/.gemini/antigravity-ide/brain/57388172-25c4-44d1-bb5d-54ca6dd5ae2e/classic_process_map_chart_1784919394843.png)
+![Process Map Flowchart Chart](screenshots/classic_process_map_chart.png)
 
 ---
 

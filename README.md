@@ -6,6 +6,23 @@ The system ingests customer support emails (from Excel `.xlsx` or `.csv` files),
 
 ---
 
+## 🖼️ Application Interface Preview
+
+### 📊 1. Analytics & Insights Dashboard
+![Analytics Dashboard](assets/screenshots/analytics_dashboard.png)
+
+---
+
+### 🚀 2. Classify Emails Interface
+![Classify Emails](assets/screenshots/classify_emails.png)
+
+---
+
+### 📜 3. SQLite Processed History Logs
+![SQLite Processed History](assets/screenshots/sqlite_history.png)
+
+---
+
 ## 🌟 Key Features
 
 - ⚡ **AI-Powered Email Classification**: Powered by Google Gemini (`gemini-2.5-flash`, `gemini-1.5-flash`, `gemini-1.5-pro`) with fallback and retry logic.
@@ -23,6 +40,14 @@ The system ingests customer support emails (from Excel `.xlsx` or `.csv` files),
 Email Classifier/
 ├── app.py              # Streamlit Web UI Dashboard
 ├── api.py              # Gemini AI API Integration & Pydantic Schema
+├── assets/             # Media assets & UI screenshots
+│   └── screenshots/
+│       ├── analytics_dashboard.png     # Analytics Dashboard Screenshot
+│       ├── classify_emails.png         # Classify Emails Interface Screenshot
+│       ├── sqlite_history.png          # SQLite Database History Logs Screenshot
+│       ├── email_upload_preview.png    # Upload & Data Preview Screenshot
+│       ├── classification_progress.png # Real-time Processing Progress Screenshot
+│       └── classification_results.png  # Structured Output Results Table Screenshot
 ├── database.py         # SQLite Database Manager (emails.db)
 ├── excel.py            # Excel & CSV Ingestion / Export Handler
 ├── config.py           # Application Settings & Path Definitions

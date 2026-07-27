@@ -448,8 +448,6 @@ def main():
                         if new_records:
                             db_manager.batch_insert_records(new_records)
 
-                            db_manager.batch_insert_records(new_records)
-
                     elapsed_time = round(time.time() - start_time, 2)
                     if stopped_early:
                         status_text.warning(
